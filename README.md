@@ -1,204 +1,168 @@
-# 🚗 Automotive Body Control Module (BCM) — ESP32
+# Automotive Body Control Module (BCM) — ESP32
 
-[![Platform](https://img.shields.io/badge/Platform-ESP32-blue.svg)](https://www.espressif.com/en/products/socs/esp32)
-[![Framework](https://img.shields.io/badge/Framework-Arduino-00979D.svg)](https://www.arduino.cc/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Working%20Prototype-success.svg)]()
+A compact, real-time **Body Control Module** firmware for the ESP32 — modeled on production-grade automotive ECU patterns. It implements a 3-state ignition machine, brake light control, turn indicators, hazard mode, synchronized audible feedback, and a live OLED instrument cluster, all driven by a non-blocking event loop.
 
-A compact, real-time **Body Control Module (BCM)** firmware for the ESP32, modeled on automotive ECU design principles. It simulates ignition state management, brake lighting, turn indicators, hazard mode, audible feedback, and an OLED instrument cluster — all driven by a non-blocking event loop.
+Aimed at automotive embedded learners, hobbyist ECU tinkerers, and anyone who wants a clean reference for state-machine firmware on the ESP32 / Arduino framework.
 
----
+## Highlights
 
-## 📌 Overview
+- **Deterministic ignition FSM** — `OFF / ACC / ON` with state-holding between rotary detents, mirroring real switch behavior.
+- **Hazard override** — both indicators blink synchronously, *even with ignition OFF*, just like a production vehicle.
+- **Non-blocking scheduler** — pure `millis()`-based timing, zero `delay()` in the main loop.
+- **Passive buzzer driver** — `tone()`-based 2 kHz square wave, gated by blink state.
+- **Throttled OLED refresh** — 10 Hz redraw avoids bottlenecking on the ~30 ms I²C transaction.
+- **Brake debouncing** — 30 ms window eliminates push-button chatter.
+- **Edge-triggered serial logging** — every signal logs only on state change, keeping the bus clean.
+- **Clean GPIO abstraction** — every pin defined once at the top, easy to remap.
 
-In modern vehicles, the **Body Control Module** is the ECU responsible for low-speed body electronics: lighting, indicators, wipers, locks, and dashboard signaling. This project recreates the core of that responsibility on an ESP32 dev board, using clean state-machine logic and `millis()`-based timing — the same patterns used in production automotive firmware.
-
-The system reads ignition position, brake input, and indicator switches, then drives LEDs, a buzzer, and an SSD1306 OLED dashboard to reflect vehicle state in real time.
-
----
-
-## ⚙️ Features
-
-- 🔑 **3-State Ignition Machine** — `OFF` / `ACC` / `ON`
-- 🛑 **Brake Light Control** — gated by ignition state
-- ↔️ **Left & Right Turn Indicators** — independent control
-- 🚨 **Hazard Mode** — synchronized dual-indicator blink
-- 🔔 **Audible Indicator Buzzer** — synchronized with blink cadence
-- 🖥 **SSD1306 OLED Dashboard** — live ignition / brake / indicator status
-- ⏱ **Non-blocking Timing** — pure `millis()`-based scheduling, zero `delay()`
-- 📟 **Edge-Triggered Serial Logging** — only logs on state change
-- 🧠 **Modular Embedded Architecture** — clean GPIO abstraction & state machine
-
----
-
-## 🧠 System Architecture
+## Architecture
 
 ```
-                ┌────────────────────────────┐
-   Rotary SW ──►│                            │──► Left LED
-   Left  SW  ──►│                            │──► Right LED
-   Right SW  ──►│         ESP32 BCM          │──► Brake LED
-   Brake SW  ──►│      (State Machine +      │──► Buzzer
-                │       Event Scheduler)     │──► OLED (I²C)
-                └────────────────────────────┘
+┌──────────────┐         ┌──────────────────────────┐         ┌──────────────┐
+│  USER INPUTS │ ──────▶ │       ESP32 BCM CORE     │ ──────▶ │   ACTUATORS  │
+│              │         │                          │         │              │
+│  Rotary SW   │         │   Ignition FSM           │         │  Brake LED   │
+│  Brake PB    │         │   Debouncer              │         │  L / R LEDs  │
+│  Toggle L/R  │         │   Blink Scheduler        │         │  Buzzer      │
+│              │         │   Output Multiplexer     │         │  OLED (I²C)  │
+└──────────────┘         └────────────┬─────────────┘         └──────────────┘
+                                      │
+                                      ▼
+                              ┌────────────────┐
+                              │ Serial Logger  │
+                              │  115200 baud   │
+                              └────────────────┘
 ```
 
-### Inputs
-| Input | Type | Purpose |
-|---|---|---|
-| Rotary Switch (3-pos) | INPUT_PULLUP | Ignition: OFF / ACC / ON |
-| Toggle Switch (Left) | INPUT_PULLUP | Left turn signal |
-| Toggle Switch (Right) | INPUT_PULLUP | Right turn signal |
-| Push Button (Brake) | INPUT_PULLUP | Brake pedal |
-
-### Outputs
-| Output | Function |
-|---|---|
-| Left Indicator LED | Blinks @ 500 ms when active |
-| Right Indicator LED | Blinks @ 500 ms when active |
-| Brake LED | Steady ON while pedal pressed |
-| Passive Buzzer | Audible blink feedback |
-| SSD1306 OLED (I²C) | Real-time dashboard |
-
----
-
-## 🔄 Operating Logic
-
-| Ignition | Brake | Indicators | Dashboard |
-|---|---|---|---|
-| **OFF** | Disabled | Disabled | Shows OFF |
-| **ACC** | Disabled | Disabled | Shows ACC |
-| **ON** | Active | Active | Full status |
-
-- **Brake press** → Brake LED ON (only when ignition = ON)
-- **Left toggle** → Left indicator blinks + buzzer
-- **Right toggle** → Right indicator blinks + buzzer
-- **Both toggles** → Hazard mode (both indicators sync)
-
----
-
-## 🛠 Hardware Components
-
-| # | Component | Qty |
-|---|---|---|
-| 1 | ESP32 Dev Board (WROOM-32) | 1 |
-| 2 | SSD1306 0.96" I²C OLED (128×64) | 1 |
-| 3 | 3-Position Rotary Switch | 1 |
-| 4 | SPST Toggle Switch | 2 |
-| 5 | Tactile Push Button | 1 |
-| 6 | 5 mm LED (any color) | 3 |
-| 7 | 220 Ω Resistor | 3 |
-| 8 | Passive Buzzer | 1 |
-| 9 | Breadboard + Jumper Wires | — |
-
----
-
-## 🔌 Pin Mapping
-
-| Function | ESP32 GPIO |
-|---|---|
-| Ignition OFF | 32 |
-| Ignition ACC | 33 |
-| Ignition ON | 25 |
-| Brake Switch | 14 |
-| Brake LED | 17 |
-| Left Switch | 26 |
-| Right Switch | 27 |
-| Left LED | 4 |
-| Right LED | 16 |
-| Buzzer | 13 |
-| OLED SDA | 21 |
-| OLED SCL | 22 |
-
----
-
-## 📷 Prototype Images
-
-### 🔧 Complete Hardware Setup
-![Hardware Setup](images/hardware_setup.jpg)
-
-### 🚨 Indicator Active
-![Indicator](images/indicator_on.jpg)
-
----
-
-## 📁 Repository Structure
+## Repository Layout
 
 ```
 Automotive-Body-Control-Module-ESP32/
 ├── code/
-│   └── bcm_esp32.ino          # Main firmware
+│   └── bcm_esp32.ino              # Main firmware
 ├── docs/
-│   └── (project documentation)
+│   ├── wiring.md                  # Pin map, schematic, bring-up checklist
+│   └── Automotive_BCM_Project_Report.md
 ├── images/
 │   ├── hardware_setup.jpg
 │   └── indicator_on.jpg
-├── LICENSE                    # MIT License
+├── LICENSE
 ├── .gitignore
 └── README.md
 ```
 
----
+## Quick Start
 
-## 🚀 Getting Started
+### 1. Prerequisites
 
-### Prerequisites
-- [Arduino IDE](https://www.arduino.cc/en/software) **2.x** (or PlatformIO)
-- ESP32 board package: install via Boards Manager → "esp32 by Espressif Systems"
-- Required libraries (Library Manager):
-  - `Adafruit GFX Library`
-  - `Adafruit SSD1306`
+| Dependency | Purpose | Install |
+| ---------- | ------- | ------- |
+| Arduino IDE ≥ 2.0 | Build & flash | <https://www.arduino.cc/en/software> |
+| ESP32 board package | Toolchain | Boards Manager → "esp32 by Espressif Systems" |
+| `Adafruit GFX Library` | Display primitives | Library Manager |
+| `Adafruit SSD1306` | OLED driver | Library Manager |
 
-### Build & Flash
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/<your-username>/Automotive-Body-Control-Module-ESP32.git
-   ```
-2. Open `code/bcm_esp32.ino` in Arduino IDE.
-3. Select **Tools → Board → ESP32 Dev Module**.
-4. Select the correct **Port**.
-5. Click **Upload**.
-6. Open Serial Monitor @ **115200 baud** to view live logs.
+### 2. Hardware
 
----
+| Component | Qty | Notes |
+| --------- | :-: | ----- |
+| ESP32 Dev Board (WROOM-32) | 1 | Tested on DevKit V1 |
+| SSD1306 OLED 128×64 (I²C) | 1 | Address `0x3C` |
+| 3-position rotary switch | 1 | Active-LOW to GND |
+| SPST toggle switch | 2 | Indicators L / R |
+| Tactile push button | 1 | Brake |
+| 5 mm LED + 220 Ω resistor | 3 | Brake / L / R |
+| Passive buzzer | 1 | Driven by `tone()` |
 
-## 🧪 Future Enhancements
+### 3. Build & Flash
 
-- 🔗 **CAN Bus Integration** via MCP2515 — multi-ECU communication
-- 💡 **Automatic Headlight Control** using LDR / ambient sensor
-- 🛠 **Fault Detection & Diagnostics (DTC)** module
-- 🏎 **Speed-Based Indicator Auto-Cancel** logic
-- 🔧 **Custom PCB Design** for automotive-grade prototype
-- 🌐 **OTA Firmware Updates** over Wi-Fi
-- 🧩 **Modular Multi-ECU Architecture** (BCM + Engine + Cluster)
+```bash
+git clone https://github.com/MdShabazS/Automotive-Body-Control-Module-ESP32.git
+```
 
----
+1. Open `code/bcm_esp32.ino` in Arduino IDE.
+2. Select **Tools → Board → ESP32 Dev Module**.
+3. Select the correct **Port**.
+4. Click **Upload**.
+5. Open Serial Monitor at **115200 baud**.
 
-## 🎯 Learning Outcomes
+## Usage
 
-- Embedded **state-machine** design for safety-critical I/O
-- Real-time, **non-blocking** firmware development with `millis()`
-- Automotive-grade **event-driven architecture**
-- Hardware/software **integration & debugging**
-- Clean **GPIO abstraction** and modular firmware structure
+1. Power the board via USB. The OLED briefly shows `BCM ESP32 Ready`.
+2. Rotate the ignition switch through `OFF → ACC → ON`. Each transition emits an `[IGN]` log line.
+3. Press the brake button — the brake LED lights only when ignition is `ON`.
+4. Toggle either indicator switch — that side blinks at 1 Hz with an audible 2 kHz buzzer chirp.
+5. Toggle **both** indicator switches — hazard mode engages with synchronized blinking and a large `HAZARD` banner on the OLED. Hazards remain active even when ignition is `OFF`.
 
----
+## Pin Map
 
-## 📜 License
+| Signal | GPIO | Mode |
+| ------ | :--: | ---- |
+| Ignition OFF | 32 | `INPUT_PULLUP` |
+| Ignition ACC | 33 | `INPUT_PULLUP` |
+| Ignition ON  | 25 | `INPUT_PULLUP` |
+| Brake switch | 14 | `INPUT_PULLUP` |
+| Left switch  | 26 | `INPUT_PULLUP` |
+| Right switch | 27 | `INPUT_PULLUP` |
+| Brake LED    | 17 | Output |
+| Left LED     |  4 | Output |
+| Right LED    | 16 | Output |
+| Buzzer       | 13 | `tone()` PWM |
+| OLED SDA / SCL | 21 / 22 | I²C |
 
-Released under the **MIT License**. See [`LICENSE`](LICENSE) for details.
+> On ESP32-WROVER modules, GPIOs 16 & 17 are reserved for PSRAM. Use a WROOM-32 board or remap. Full schematic in [`docs/wiring.md`](docs/wiring.md).
 
----
+## Configuration
 
-## 👨‍💻 Author
+All tunables live at the top of `code/bcm_esp32.ino`:
 
-**Mohammed Shabaz S**
-Electronics & Communication Engineering
-Automotive Embedded Systems Enthusiast 🚗🔥
+```cpp
+const unsigned long BLINK_INTERVAL_MS  = 500;   // Indicator blink period
+const unsigned long DISPLAY_REFRESH_MS = 100;   // OLED redraw period
+const unsigned long DEBOUNCE_MS        = 30;    // Brake debounce window
+#define BUZZER_FREQ                    2000     // Buzzer tone (Hz)
+#define OLED_ADDR                      0x3C     // SSD1306 I²C address
+```
 
-[![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?logo=github)](https://github.com/)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin)](https://www.linkedin.com/)
+## Operating Logic
 
----
+| Ignition | Brake | Indicators | Hazards | Dashboard |
+| -------- | :---: | :--------: | :-----: | --------- |
+| OFF      |   ✗   |     ✗      |    ✓    | `IGN: OFF` |
+| ACC      |   ✗   |     ✗      |    ✓    | `IGN: ACC` |
+| ON       |   ✓   |     ✓      |    ✓    | Full live status |
 
-> ⭐ If you found this project useful, please consider giving it a star — it helps others discover it!
+## Prototype Images
+
+### Hardware Setup
+![Hardware Setup](images/hardware_setup.jpg)
+
+### Indicator Active
+![Indicator](images/indicator_on.jpg)
+
+## Roadmap
+
+- [ ] CAN-bus integration via MCP2515 (multi-ECU communication)
+- [ ] Speed-aware indicator auto-cancel
+- [ ] Automatic headlight control (LDR-based)
+- [ ] Diagnostic Trouble Codes (DTC) module with non-volatile storage
+- [ ] OTA firmware updates over Wi-Fi
+- [ ] Custom 4-layer PCB for an automotive-grade prototype
+
+## Contributing
+
+Issues and pull requests are welcome. For larger changes, please open an issue first to discuss what you would like to change.
+
+```bash
+git checkout -b feature/my-change
+# ... commits ...
+git push origin feature/my-change
+```
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+## Author
+
+**Mohammed Shabaz S** — [@MdShabazS](https://github.com/MdShabazS)
