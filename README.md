@@ -1,10 +1,29 @@
-# Automotive Body Control Module (BCM) — ESP32
+<div align="center">
 
-A compact, real-time **Body Control Module** firmware for the ESP32 — modeled on production-grade automotive ECU patterns. It implements a 3-state ignition machine, brake light control, turn indicators, hazard mode, synchronized audible feedback, and a live OLED instrument cluster, all driven by a non-blocking event loop.
+# 🚗 Automotive Body Control Module (BCM)
+
+### Real-Time Vehicle Body Electronics Firmware on ESP32
+
+A production-style automotive ECU firmware that simulates ignition, brake, indicators, hazards, and an OLED dashboard — driven by a non-blocking state machine on the ESP32.
+
+[![Platform](https://img.shields.io/badge/Platform-ESP32-E7352C?logo=espressif&logoColor=white)](https://www.espressif.com/en/products/socs/esp32)
+[![Framework](https://img.shields.io/badge/Framework-Arduino-00979D?logo=arduino&logoColor=white)](https://www.arduino.cc/)
+[![Language](https://img.shields.io/badge/Language-C%2B%2B-00599C?logo=cplusplus&logoColor=white)](https://isocpp.org/)
+[![Display](https://img.shields.io/badge/Display-SSD1306-000000?logo=oled&logoColor=white)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-working%20prototype-brightgreen)]()
+
+</div>
+
+---
+
+## 📌 Overview
+
+**BCM-ESP32** is a compact, real-time **Body Control Module** firmware modeled on production-grade automotive ECU patterns. It implements a 3-state ignition machine, brake light control, turn indicators, hazard mode, synchronized audible feedback, and a live OLED instrument cluster — all driven by a non-blocking event loop.
 
 Aimed at automotive embedded learners, hobbyist ECU tinkerers, and anyone who wants a clean reference for state-machine firmware on the ESP32 / Arduino framework.
 
-## Highlights
+## ✨ Highlights
 
 - **Deterministic ignition FSM** — `OFF / ACC / ON` with state-holding between rotary detents, mirroring real switch behavior.
 - **Hazard override** — both indicators blink synchronously, *even with ignition OFF*, just like a production vehicle.
@@ -15,7 +34,7 @@ Aimed at automotive embedded learners, hobbyist ECU tinkerers, and anyone who wa
 - **Edge-triggered serial logging** — every signal logs only on state change, keeping the bus clean.
 - **Clean GPIO abstraction** — every pin defined once at the top, easy to remap.
 
-## Architecture
+## 🧠 Architecture
 
 ```
 ┌──────────────┐         ┌──────────────────────────┐         ┌──────────────┐
@@ -34,7 +53,7 @@ Aimed at automotive embedded learners, hobbyist ECU tinkerers, and anyone who wa
                               └────────────────┘
 ```
 
-## Repository Layout
+## 📁 Repository Layout
 
 ```
 Automotive-Body-Control-Module-ESP32/
@@ -51,7 +70,7 @@ Automotive-Body-Control-Module-ESP32/
 └── README.md
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Prerequisites
 
@@ -86,7 +105,7 @@ git clone https://github.com/MdShabazS/Automotive-Body-Control-Module-ESP32.git
 4. Click **Upload**.
 5. Open Serial Monitor at **115200 baud**.
 
-## Usage
+## 🎮 Usage
 
 1. Power the board via USB. The OLED briefly shows `BCM ESP32 Ready`.
 2. Rotate the ignition switch through `OFF → ACC → ON`. Each transition emits an `[IGN]` log line.
@@ -94,7 +113,7 @@ git clone https://github.com/MdShabazS/Automotive-Body-Control-Module-ESP32.git
 4. Toggle either indicator switch — that side blinks at 1 Hz with an audible 2 kHz buzzer chirp.
 5. Toggle **both** indicator switches — hazard mode engages with synchronized blinking and a large `HAZARD` banner on the OLED. Hazards remain active even when ignition is `OFF`.
 
-## Pin Map
+## 🔌 Pin Map
 
 | Signal | GPIO | Mode |
 | ------ | :--: | ---- |
@@ -112,7 +131,7 @@ git clone https://github.com/MdShabazS/Automotive-Body-Control-Module-ESP32.git
 
 > On ESP32-WROVER modules, GPIOs 16 & 17 are reserved for PSRAM. Use a WROOM-32 board or remap. Full schematic in [`docs/wiring.md`](docs/wiring.md).
 
-## Configuration
+## ⚙️ Configuration
 
 All tunables live at the top of `code/bcm_esp32.ino`:
 
@@ -124,7 +143,7 @@ const unsigned long DEBOUNCE_MS        = 30;    // Brake debounce window
 #define OLED_ADDR                      0x3C     // SSD1306 I²C address
 ```
 
-## Operating Logic
+## 🔄 Operating Logic
 
 | Ignition | Brake | Indicators | Hazards | Dashboard |
 | -------- | :---: | :--------: | :-----: | --------- |
@@ -132,7 +151,7 @@ const unsigned long DEBOUNCE_MS        = 30;    // Brake debounce window
 | ACC      |   ✗   |     ✗      |    ✓    | `IGN: ACC` |
 | ON       |   ✓   |     ✓      |    ✓    | Full live status |
 
-## Prototype Images
+## 📷 Prototype Images
 
 ### Hardware Setup
 ![Hardware Setup](images/hardware_setup.jpg)
@@ -140,7 +159,7 @@ const unsigned long DEBOUNCE_MS        = 30;    // Brake debounce window
 ### Indicator Active
 ![Indicator](images/indicator_on.jpg)
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [ ] CAN-bus integration via MCP2515 (multi-ECU communication)
 - [ ] Speed-aware indicator auto-cancel
@@ -149,7 +168,7 @@ const unsigned long DEBOUNCE_MS        = 30;    // Brake debounce window
 - [ ] OTA firmware updates over Wi-Fi
 - [ ] Custom 4-layer PCB for an automotive-grade prototype
 
-## Contributing
+## 🤝 Contributing
 
 Issues and pull requests are welcome. For larger changes, please open an issue first to discuss what you would like to change.
 
@@ -159,10 +178,20 @@ git checkout -b feature/my-change
 git push origin feature/my-change
 ```
 
-## License
+## 📜 License
 
 Released under the [MIT License](LICENSE).
 
-## Author
+## 👨‍💻 Author
 
-**Mohammed Shabaz S** — [@MdShabazS](https://github.com/MdShabazS)
+<div align="center">
+
+**Mohammed Shabaz S**
+Electronics & Communication Engineering · Automotive Embedded Systems
+
+[![GitHub](https://img.shields.io/badge/GitHub-MdShabazS-181717?logo=github)](https://github.com/MdShabazS)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin)](https://www.linkedin.com/)
+
+⭐ *If you found this project useful, please consider giving it a star — it helps others discover it!*
+
+</div>
