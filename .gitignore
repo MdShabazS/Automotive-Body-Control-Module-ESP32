@@ -1,0 +1,20 @@
+# Arduino / PlatformIO build artifacts
+build/
+*.hex
+*.bin
+*.elf
+*.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
